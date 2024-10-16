@@ -30,8 +30,8 @@ class API {
         $endpoint = '/oauth2/token';
         
         $params = [
-            'client_id'     => $clientID,
-            'client_secret' => $clientSecret,
+            'client_id'     => $this->clientID,
+            'client_secret' => $this->clientSecret,
             'grant_type'    => 'client_credentials'
         ];
 
@@ -49,6 +49,6 @@ class API {
 
         $response = json_decode($response);
 
-        return $response
+        return $response;
     }
 }
