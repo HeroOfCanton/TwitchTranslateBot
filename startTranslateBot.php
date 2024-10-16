@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Author: Ryan Welling - twitch.tv/shrum
+ * Author: Ryan - twitch.tv/shrum
  * Copyright 2024
  * 
  * This program is distributed under the terms of the GNU General Public License
