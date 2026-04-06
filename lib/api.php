@@ -9,7 +9,7 @@ class API {
 
     private static $clientID = 'gaoiz26gvinl2f223wvw6xus1qzgpd';
     private static $clientSecret = '';
-    
+
     private $oauth_url = 'https://id.twitch.tv';
 
     private BotCurl $botcurl;
@@ -56,8 +56,7 @@ class API {
      * @param string $google_api_key
      * @return string|null Translated text on success, null on failure
      */
-    public function translate_text(string $text, string $target_lang, string $google_api_key): ?string
-    {
+    public function translate_text(string $text, string $target_lang, string $google_api_key): ?string {
         if (empty($text) || empty($google_api_key) || empty($target_lang)) {
             return null;
         }
@@ -66,7 +65,7 @@ class API {
 
         $endpoint = '/language/translate/v2';
 
-        $url_params = [ 'key' => $google_api_key ];
+        $url_params = ['key' => $google_api_key];
 
         $post_data = [
             'q' => $text,

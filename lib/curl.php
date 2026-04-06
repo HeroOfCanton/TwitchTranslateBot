@@ -13,6 +13,9 @@ class BotCurl {
 	private $last_request_type = null;
     private $last_response = null;
 	private $last_curl_error = null;
+
+	private $num_auto_retries = 0;
+	private $auto_retry_sleep = 0;
     
     private $base_url;
     private $current_url;
