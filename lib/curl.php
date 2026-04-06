@@ -16,8 +16,16 @@ class BotCurl {
 
 	private $num_auto_retries = 0;
 	private $auto_retry_sleep = 0;
-    
-    private $base_url;
+    private $rate_limit_http_code = [];
+	private $rate_limit_sleep = 0;
+	private $oauth_refresh_params = [];
+	private $log;
+
+	private $temp_base_url = null;
+	private $temp_oauth_header = null;
+	private $last_graphql_type = null;
+
+	private $base_url;
     private $current_url;
     private $ch;
 
