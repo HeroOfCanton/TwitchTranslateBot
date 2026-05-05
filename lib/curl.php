@@ -8,10 +8,10 @@ class BotCurl {
 	 * @var int
 	 */
 	private $last_http_code;
-	private $last_headers_sent = null;
-	private $last_request = null;
-	private $last_request_type = null;
-    private $last_response = null;
+	private $last_headers_sent = [];
+	private $last_request = [];
+	private $last_request_type = '';
+    private $last_response = [];
 	private $last_curl_error = null;
 
 	private $num_auto_retries = 0;
@@ -21,11 +21,7 @@ class BotCurl {
 	private $oauth_refresh_params = [];
 	private $log;
 
-	private $temp_base_url = null;
-	private $temp_oauth_header = null;
-	private $last_graphql_type = null;
-
-	private $base_url;
+	private $base_url = '';
     private $current_url;
     private $ch;
 
@@ -35,7 +31,7 @@ class BotCurl {
     /** @var array $response_headers Key value list of headers in response. */
 	private $response_headers = [];
 
-    public function __construct($base_url) {
+    public function __construct(string $base_url) {
 
         $this->base_url = trim($base_url);
 
@@ -62,7 +58,7 @@ class BotCurl {
 	 * Change base_url for this curl object
 	 * @param int $base_url
 	 */
-	public function change_base_url($base_url){
+	public function change_base_url($base_url) {
 		$this->base_url = $base_url;
 	}
 	
@@ -70,7 +66,7 @@ class BotCurl {
 	 * Return the http status code for the most recent API call
 	 * @return int
 	 */
-	public function get_last_http_code(){
+	public function get_last_http_code() {
 		return $this->last_http_code;
 	}
 	
@@ -78,7 +74,7 @@ class BotCurl {
 	 * Return raw response string
 	 * @return string
 	 */
-	public function get_last_raw_response(){
+	public function get_last_raw_response() {
 		return $this->last_response;
 	}
 	
@@ -86,7 +82,7 @@ class BotCurl {
 	 * Return raw request string
 	 * @return string
 	 */
-	public function get_last_raw_request(){
+	public function get_last_raw_request() {
 		return $this->last_request;
 	}
 	
@@ -94,7 +90,7 @@ class BotCurl {
 	 * Get HTTP type of last request. EG. GET, POST, DELETE, etc
 	 * @return string
 	 */
-	public function get_last_request_type(){
+	public function get_last_request_type() {
 		return $this->last_request_type;
 	}
 
@@ -102,7 +98,7 @@ class BotCurl {
 	 * Get key/value list of response headers. All Keys are ALWAYS lowercase regardless of how they were received (HTTP2 standard)
 	 * @return array Header name as lowercase Key. Value as value
 	 */
-	public function get_response_headers(){
+	public function get_response_headers() {
 		return $this->response_headers;
 	}
 	
@@ -111,11 +107,11 @@ class BotCurl {
 	 * @param string $header Response Header to get value for. Case insensitive
 	 * @return string|null Response Header value
 	 */
-	public function get_response_header($header){
-		if(empty($header)){
+	public function get_response_header($header) {
+		if (empty($header)) {
 			return null;
 		}
-		
+
 		return $this->response_headers[strtolower($header)] ?? null;
 	}
 	
@@ -123,7 +119,7 @@ class BotCurl {
 	 * Get key/value list of request headers sent
 	 * @return array Header name as Key. Value as value
 	 */
-	public function get_request_headers(){
+	public function get_request_headers() {
 		return $this->last_headers_sent;
 	}
 
@@ -132,10 +128,11 @@ class BotCurl {
      *
      * @return void
      */
-	public function curl_init(){
-		if(!empty($this->ch)){
+	public function curl_init() {
+		if (!empty($this->ch)) {
 			unset($this->ch);
 		}
+
 		$this->current_url = null;
 		$this->ch = curl_init();
 	}
@@ -147,7 +144,7 @@ class BotCurl {
      * @return void
      */
     public function set_curl_params($curl_params) {
-        if(!empty($curl_params)){
+        if (!empty($curl_params)) {
 			curl_setopt_array($this->ch, $curl_params);
 		}
     }
@@ -160,7 +157,7 @@ class BotCurl {
 	 * @param array $header numerically indexed array of header strings
 	 * @return mixed Parsed Response
 	 */
-	public function get($endpoint='', $url_params=array(), $header=array()){
+	public function get($endpoint='', $url_params=array(), $header=array()) {
 		return $this->make_curl_call('GET', $endpoint, $url_params, array(), $header);
 	}
 	
@@ -201,7 +198,7 @@ class BotCurl {
 	 * @param boolean $log_response
 	 * @return mixed Parsed Response
 	 */
-	public function patch($endpoint='', $url_params=array(), $post_data=array(), $header=array()){
+	public function patch($endpoint='', $url_params=array(), $post_data=array(), $header=array()) {
 		return $this->make_curl_call('PATCH', $endpoint, $url_params, $post_data, $header);
 	}
 
@@ -214,7 +211,7 @@ class BotCurl {
 	 * @param boolean $log_response
 	 * @return mixed Parsed Response
 	 */
-	public function delete($endpoint='', $url_params=array(), $post_data=array(), $header=array()){
+	public function delete($endpoint='', $url_params=array(), $post_data=array(), $header=array()) {
 		return $this->make_curl_call('DELETE', $endpoint, $url_params, $post_data, $header);
 	}
 
@@ -229,12 +226,12 @@ class BotCurl {
 	 * @return mixed Response
 	 * @throws Exception
 	 */
-	private function make_curl_call($request_type, $endpoint, $url_params=array(), $post_data=array(), $header=array()){
+	private function make_curl_call($request_type, $endpoint, $url_params=array(), $post_data=array(), $header=array()) {
 
 		$num_retries = $this->num_auto_retries;
 		$this->last_request_type = $request_type;
 		
-		do{
+		do {
 			// Reset any stored request data
 			$this->last_request = $this->last_headers_sent =
 					$this->last_response = $this->last_curl_error =
@@ -244,52 +241,38 @@ class BotCurl {
 			$retry = false;
 			try {
 				$this->pre_call($endpoint, $url_params, $post_data, $header, $request_type);
-
 				$this->last_response = curl_exec($this->ch);
-
 				$result = $this->post_call($log_response, $request_type);
-
-			} catch(Exception $e) {
+			} catch (Exception $e) {
 				$retry = true;
 				
 				// Always sleep for over rate limit, even if not retrying
-				if(!empty($this->rate_limit_http_code) && !empty($this->rate_limit_sleep) && in_array($e->getHTTPCode(), $this->rate_limit_http_code) ){
+				if (!empty($this->rate_limit_http_code) && !empty($this->rate_limit_sleep) && in_array($e->getHTTPCode(), $this->rate_limit_http_code)) {
 					$this->log->logWarn("Over rate limit. Sleeping {$this->rate_limit_sleep} seconds");
 					sleep($this->rate_limit_sleep);
 				}
 				
 				// Detect and refresh oauth access token
-				if(
+				if (
 					// Detect HTTP code indicating Auth is expired
 					(!empty($this->oauth_refresh_params['refresh_http_status']) && in_array($this->last_http_code, $this->oauth_refresh_params['refresh_http_status']))
 					// OR if Exception explicitely requests a refresh
 					|| (!empty($this->oauth_refresh_params['callable_function']) && $e->getAuthExpired())
-				){
-
-					
+				) {
 					//Returns new access_token if changed
 					$ret = call_user_func_array($this->oauth_refresh_params['callable_function'],
 						$this->oauth_refresh_params['function_params']);
 					
 					//If access_token is returned, update the oauth header in the object!
-					if($ret){
+					if ($ret) {
 						$this->oauth_refresh_params['oauth_header'] = call_user_func_array($this->oauth_refresh_params['oauth_header_update_function'],
 										[$ret]);
-						
+						$this->log->logInfo("Refreshed OAuth token");
 					}
 				}
-				
-				if($num_retries < 0 || $e->getRetry() == false){
-					$this->temp_base_url = null;
-					$this->temp_oauth_header = null;
-					$this->last_graphql_type = null;
-
-					throw $e;
-				}
-				
 				sleep($this->auto_retry_sleep);
 			}
-		} while($retry && $num_retries >= 0);
+		} while ($retry && $num_retries >= 0);
 
 		return $result;
 	}
